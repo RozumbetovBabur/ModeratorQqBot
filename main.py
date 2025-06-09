@@ -1,6 +1,6 @@
 from telegram import BotCommand
 from telegram.ext import Updater, MessageHandler, CallbackQueryHandler, CommandHandler, Filters, ChatMemberHandler
-# from config import TOKEN
+from config import TOKEN
 from handlers import handle_new_members, handle_member_update, handle_new_message, handle_check_invites, handle_start, handle_member_update
 from database import init_db
 from admin_panel import get_admin_panel_handler, admin_stats_handler, back_to_admin_panel, handle_admin_users

@@ -1,4 +1,3 @@
 import os
 import sys
-# TOKEN = "7160926098:AAFR_hdsUxLgrxyGazUEhPqy8VAeHwzFYbU"
-TOKEN = os.getenv("7160926098:AAFR_hdsUxLgrxyGazUEhPqy8VAeHwzFYbU")
+TOKEN = os.getenv("8037343788:AAF4xPTW9FeLbq8zEtZno4J1IeXf-p5ZTps")
