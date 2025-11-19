@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackContext
 
-def help_command(update: Update, context: CallbackContext) -> None:
+def help_command(update, context):
     help_text = (
         "🤖 *Bot Xızmetleri Haqqında Tolıq Qóllanba*\n\n"
         "📌 Bul bot arqalı siz toparıńızdı basqarıwıńız, statistika kóriwińiz hám"
@@ -19,7 +19,7 @@ def help_command(update: Update, context: CallbackContext) -> None:
         "❗️Esletpe: Buyrıqlar tek kerekli ruxsat hám adminlikka iye paydalanıwshılar ushın isleydi. Gruppanı tolıq basqarıw ushın siz botga adminlik huqıqın bergenińizge isenim payda etiń.\n\n"
 
         "🔐 Sistema qawipsizligi hám paydalanıwshılar maǵlıwmatları mudami qorǵawda!\n\n"
-        "📞 Járdem kerek bolsa - /help buyrıǵın qayta jiberiń yamasa adminlerge xabar beriń."
+        "📞 Járdem kerek bolsa - /help buyrıǵın qayta jiberiń yamasa adminlerge xabar beriń: @BaburDevBot"
     )
 
     update.message.reply_text(help_text, parse_mode='Markdown')

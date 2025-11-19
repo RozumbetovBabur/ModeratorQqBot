@@ -1,8 +1,8 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ChatMember, BotCommand
 from telegram.ext import CallbackQueryHandler, MessageHandler, Filters, CommandHandler, CallbackContext
-from database import add_user, increment_invite, get_invited_count, get_all_users, save_admin, is_admin_from_db, save_group, get_planned_count_by_group_id
-
-
+from database import add_user, increment_invite, get_invited_count, is_privileged_user, save_admin, is_admin_from_db, save_group, get_planned_count_by_group_id
+import sqlite3
+from datetime import datetime
 def handle_new_members(update, context):
     message = update.message
     inviter = message.from_user  # Kim qo‘shganini aniqlaydi
@@ -50,7 +50,7 @@ def handle_new_message(update, context):
         # print(f"{user.full_name} — Admin yamasa bot, bazaǵa qosılmadi.")
 
     # 👮 Adminlar va botlar uchun boshqa tekshiruv ishlamasin
-    if is_admin or user.is_bot:
+    if is_admin or user.is_bot or is_privileged_user(user_id, chat_id):
         return
 
     # ✋ Agar admin bo‘lmasa, invited_count tekshiruv ishlaydi
@@ -101,10 +101,18 @@ def handle_check_invites(update, context):
     chat_id = query.message.chat_id
 
 
+    # add_user(user.id, user.full_name)  # Foydalanuvchini bazaga qo‘shib qo‘yish
+
+    # 🔧 Yangi foydalanuvchini qo‘shamiz (username va group_id bilan)
+    add_user(
+        user_id=user.id,
+        full_name=user.full_name,
+        username=user.username,
+        group_id=chat_id
+    )
+
     count = get_invited_count(user.id)
     planned_count = get_planned_count_by_group_id(chat_id)
-
-    add_user(user.id, user.full_name)  # Foydalanuvchini bazaga qo‘shib qo‘yish
 
     query.answer()
     query.edit_message_text(
@@ -183,12 +191,12 @@ def handle_start(update: Update, context: CallbackContext):
 
         save_admin(user_id, username, phone_number, group_id)
 
-        admin_list.append(f"👤 {admin_user.full_name} | @{username}")
+        # admin_list.append(f"👤 {admin_user.full_name} | @{username}")
+        admin_list.append(f"👤 {admin_user.full_name}")
 
     admin_text = "\n".join(admin_list)
     update.message.reply_text(
-        f"✅ Gruppa: {group_name} ({group_id})\n"
-        f"Adminlar bazaga saqlandi:\n\n{admin_text}"
+        f"✅ Gruppa: {group_name}\n"
+        f"Adminler dizimi:\n\n{admin_text}"
     )
-
 

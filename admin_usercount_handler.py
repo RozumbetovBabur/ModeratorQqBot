@@ -1,12 +1,14 @@
 # admin_usercount_handler.py
-import sqlite3
+# Callback handler uchun
+from admin_panel import build_admin_panel
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext, MessageHandler, Filters
-from database import is_admin
+from database import is_admin, get_connection, release_connection, db_pool
+import psycopg2
 
 
 # Matn yuborish bosqichi
-def handle_usercount(update: Update, context: CallbackContext):
+def handle_usercount(update,context):
     user_id = update.effective_user.id
     group_ids = is_admin(user_id)
 
@@ -24,8 +26,7 @@ def handle_usercount(update: Update, context: CallbackContext):
     context.user_data['awaiting_usercount'] = True
 
 
-# Son qabul qilish va saqlash
-def receive_usercount(update: Update, context: CallbackContext):
+def receive_usercount(update,context):
     if not context.user_data.get('awaiting_usercount'):
         return
 
@@ -40,41 +41,67 @@ def receive_usercount(update: Update, context: CallbackContext):
         update.message.reply_text("❌ Toparlar tabılmadı.")
         return
 
-    # Jadval yaratish va saqlash
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
+    conn = None
+    cursor = None
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS planned_invites (
-        group_id INTEGER PRIMARY KEY,
-        planned_count INTEGER
-    )''')
+    try:
+        # PostgreSQL ga ulanish
+        conn = db_pool.getconn()
+        cursor = conn.cursor()
 
-    for gid in group_ids:
-        cursor.execute("REPLACE INTO planned_invites (group_id, planned_count) VALUES (?, ?)", (gid, count))
+        # Jadval yaratish (agar hali mavjud bo‘lmasa)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS planned_invites (
+                group_id BIGINT PRIMARY KEY,
+                planned_count INTEGER
+            )
+        ''')
 
-    conn.commit()
-    conn.close()
+        # Har bir group_id uchun upsert qilish
+        for gid in group_ids:
+            cursor.execute('''
+                INSERT INTO planned_invites (group_id, planned_count)
+                VALUES (%s, %s)
+                ON CONFLICT (group_id)
+                DO UPDATE SET planned_count = EXCLUDED.planned_count
+            ''', (gid, count))
+
+        # Guruh nomlarini yig'ish
+        group_lines = ""
+        for gid in group_ids:
+            cursor.execute("SELECT group_name FROM groups WHERE group_id = %s", (gid,))
+            result = cursor.fetchone()
+            group_name = result[0] if result else f"ID: {gid}"
+            group_lines += f"- <b>{group_name}</b> → <b>{count}</b>\n"
+
+        conn.commit()
+
+    except Exception as e:
+        print(f"[receive_usercount] Xatolik: {e}")
+        update.message.reply_text("❌ Xatolik yuz berdi.")
+        return
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            db_pool.putconn(conn)
 
     context.user_data['awaiting_usercount'] = False
 
-    group_lines = "\n".join([f"- <code>{gid}</code> → <b>{count}</b>" for gid in group_ids])
     keyboard = InlineKeyboardMarkup([
         [InlineKeyboardButton("⬅️ Arqaǵa", callback_data="back_to_admin")]
     ])
 
     update.message.reply_text(
         f"✅ <b>Maǵlıwmatlar tabıslı saqlandi!</b>\n\n"
-        f"Tómendegi toparlarǵa san jazıldı :\n{group_lines}",
+        f"Tómendegi toparlarǵa san jazıldı:\n{group_lines}",
         parse_mode='HTML',
         reply_markup=keyboard
     )
 
 
-# Callback handler uchun
-from admin_panel import build_admin_panel
-
-
-def back_to_admin(update: Update, context: CallbackContext):
+def back_to_admin(update,context):
     query = update.callback_query
     query.answer()
     user_id = query.from_user.id

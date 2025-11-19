@@ -4,7 +4,7 @@ from telegram.ext import CallbackContext
 from database import is_admin, clear_invited_counts_by_group_ids
 from admin_panel import build_admin_panel
 
-def handle_admin_cleanup(update: Update, context: CallbackContext):
+def handle_admin_cleanup(update,context):
     query = update.callback_query
     user_id = query.from_user.id
     group_ids = is_admin(user_id)
@@ -29,7 +29,7 @@ def handle_admin_cleanup(update: Update, context: CallbackContext):
 
     query.edit_message_text(text=text, parse_mode="HTML", reply_markup=keyboard)
 
-def confirm_cleanup(update: Update, context: CallbackContext):
+def confirm_cleanup(update,context):
     query = update.callback_query
     query.answer()
 
@@ -56,7 +56,7 @@ def confirm_cleanup(update: Update, context: CallbackContext):
         query.edit_message_text("❌ Sizde ruxsat joq.")
 
 
-def cancel_cleanup(update: Update, context: CallbackContext):
+def cancel_cleanup(update,context):
     query = update.callback_query
     query.answer()
     user_id = query.from_user.id
@@ -68,21 +68,3 @@ def cancel_cleanup(update: Update, context: CallbackContext):
         reply_markup=keyboard
     )
 
-
-
-
-
-# database.py dagi kerakli funksiya
-# def clear_invited_counts_by_group_ids(group_ids):
-#     import sqlite3
-#     conn = sqlite3.connect("users.db")
-#     cursor = conn.cursor()
-#
-#     format_strings = ",".join(["?"] * len(group_ids))
-#     cursor.execute(f'''
-#         UPDATE users SET invited_count = 0
-#         WHERE group_id IN ({format_strings})
-#     ''', group_ids)
-#
-#     conn.commit()
-#     conn.close()

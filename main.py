@@ -1,12 +1,13 @@
 from telegram import BotCommand
 from telegram.ext import Updater, MessageHandler, CallbackQueryHandler, CommandHandler, Filters, ChatMemberHandler
-from config import TOKEN
-from handlers import handle_new_members, handle_member_update, handle_new_message, handle_check_invites, handle_start, handle_member_update
-from database import init_db
-from admin_panel import get_admin_panel_handler, admin_stats_handler, back_to_admin_panel, handle_admin_users
+# from config import TOKEN
+from handlers import handle_new_members, handle_new_message, handle_check_invites, handle_start, handle_member_update
+from database import init_db,get_users_by_exact_range
+from admin_panel import get_admin_panel_handler, admin_stats_handler, back_to_admin_panel, handle_admin_users, handle_time_based_report
 from admin_cleanup_handler import handle_admin_cleanup, confirm_cleanup, cancel_cleanup
 from admin_usercount_handler import handle_usercount, receive_usercount, usercount_conv_handler, back_to_admin
 from help import help_command
+from imtiyoz import handle_grant_privilege, handle_privilege_selection
 import os
 import sys
 from dotenv import load_dotenv
@@ -27,6 +28,7 @@ def main():
         ]
     )
     init_db()
+    # users = get_users_by_exact_range(group_ids=[-1001234567890], from_days_ago=0, to_days_ago=1)
     updater = Updater(token=token, use_context=True)
     dp = updater.dispatcher
 
@@ -53,6 +55,11 @@ def main():
     # 🔐 Admin panel handler
     dp.add_handler(get_admin_panel_handler())
 
+    dp.add_handler(CallbackQueryHandler(handle_admin_users, pattern='^report_back$')) # arqag'a qaytiw joli
+
+    dp.add_handler(CallbackQueryHandler(handle_grant_privilege, pattern="^grant_privilege$"))
+    dp.add_handler(CallbackQueryHandler(handle_privilege_selection, pattern="^give_priv:"))
+
     dp.add_handler(CallbackQueryHandler(admin_stats_handler, pattern='^admin_stats$'))
     dp.add_handler(CallbackQueryHandler(back_to_admin_panel, pattern='^back_to_admin_panel$'))
     dp.add_handler(CallbackQueryHandler(handle_admin_users, pattern='^admin_users$'))
@@ -62,7 +69,10 @@ def main():
     dp.add_handler(CallbackQueryHandler(cancel_cleanup, pattern='cancel_cleanup'))
 
     dp.add_handler(CallbackQueryHandler(handle_usercount, pattern='^admin_usercount$'))
+    dp.add_handler(CallbackQueryHandler(handle_time_based_report, pattern='^report_'))
+
     dp.add_handler(CallbackQueryHandler(back_to_admin, pattern='^back_to_admin$'))
+
     dp.add_handler(usercount_conv_handler)
 
 
